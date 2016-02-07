@@ -1,3 +1,5 @@
+ # the main function in the BF protocol - allows for a single evaluation to be made 
+
 evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, beta, s,
                      tokenRewardFactor, reputationRewardFactor, rewardScoreThreshold)
 {
@@ -29,10 +31,11 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, bet
   
   # update users reputation 1) stake distribution
   users$reputation[contrib[3:length(contrib)] == vote] <- users$reputation[contrib[3:length(contrib)] == vote]*
-    (1 + (currentEvaluatorRep * s / equallyVotedRep) * (equallyVotedRep / totalRep)^alpha ) ;
+    (1 + s * stakeDistribution(currentEvaluatorRep, equallyVotedRep, totalRep, alpha) ) ;
   
-  # *********************8
-  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - currentEvaluatorRep*s*stakeFunction(votedRep/totalRep, 0.5,5) ;
+  # stake fee for current evaluator.
+  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - currentEvaluatorRep * s * 
+    stakeFee(votedRep, totalRep, feeThreshold, feeInvWidth) ;
   
   # update users reputation 2) voting incentive
   votingIncentive <- 1 / (1 - s*(currentEvaluatorRep / totalRep)^beta) ;

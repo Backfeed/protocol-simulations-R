@@ -12,6 +12,10 @@ tokenRewardFactor <- 0 ;
 reputationRewardFactor <- 0 ;
 rewardScoreThreshold <- 0.3 ;
 
+# params for stake functions
+feeThreshold <- 0.5 ;
+feeInvWidth <- 5 ;
+
 # create user data frame
 userNames <- paste("P",1:numUsers,sep = "");
 userReputation <- rep(initialReputation, numUsers) ;
@@ -26,6 +30,7 @@ votes <- matrix(-1, nrow = contributionsNum, ncol = numUsers) ;
 colnames(votes)<-userNames ;
 contributions<-data.frame(id = contribIds, contributor = contributor, votes) ;
 
+# create scenario data frame
 evaluators <- c(1:numEvaluations) ;
 evaluatedContribs <- rep(1,numEvaluations) ;
 voteValues <- rep(1,numEvaluations) ;
@@ -38,7 +43,16 @@ scenario <- data.frame(evaluators, evaluatedContribs, voteValues) ;
 # scenario <- data.frame(evaluators, evaluatedContribs, voteValues) ;
 # numEvaluations <- length(evaluators) ;
 
-stakeFunction <- function(v, v0, mu) {
-  x <- 1 / (1+exp(mu*((v/v0)-1)));
+
+# define a function for the stake payment
+stakeFee <- function(votedRep, totalRep, feeThreshold, feeInvWidth) {
+  v <- votedRep / totalRep ;
+  x <- 1 / (1+exp(feeInvWidth*((v/feeThreshold)-1)));
   return(x);
+}
+
+# define a function for the stake distribution
+stakeDistribution <- function(currentEvaluatorRep, equallyVotedRep, totalRep, alpha) {
+  x <- (currentEvaluatorRep / equallyVotedRep) * (equallyVotedRep / totalRep)^alpha
+  return(x) ;
 }
