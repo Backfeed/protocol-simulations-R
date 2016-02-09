@@ -1,6 +1,20 @@
- # the main function in the BF protocol - allows for a single evaluation to be made 
+ # the main function in the BF protocol - allows for a single evaluation to be made along with its two sub-functions.
 
-evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, beta, s,
+
+# define a function for the stake distribution
+stakeDistribution <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha) {
+  x <- (currentEvaluatorRep / equallyVotedRep) * (equallyVotedRep / totalRep)^alpha
+  return(x) ;
+}
+
+# define a function for the stake payment
+stakeFee <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta) {
+  x <- currentEvaluatorRep * (  1 - ((votedRep - currentEvaluatorRep) / totalRep)^beta ) ; 
+  # votedRep inculdes currentEvaluatorRep and therfore >=0.
+  return(x);
+}
+
+evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, beta, s, d,
                      tokenRewardFactor, reputationRewardFactor, rewardScoreThreshold)
 {
   
@@ -21,8 +35,8 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, bet
   
   previousUpvote <- sum(users$reputation[contrib[3:length(contrib)] == 1]) ;
   currentEvaluatorRep <- users$reputation[evaluatorInd] ;
-  contrib[2+evaluatorInd] <- vote ;
-  votedRep <- sum(users$reputation[contrib[3:length(contrib)] != -1]) ;
+  contrib[2+evaluatorInd] <- vote ; # evaluator makes the vote.
+  votedRep <- sum(users$reputation[contrib[3:length(contrib)] != -1]) ; #includes current evaluator
   totalRep <- sum(users$reputation) ;
   equallyVotedRep <- sum(users$reputation[contrib[3:length(contrib)] == vote]) ;
   upVotedRep <- sum(users$reputation[contrib[3:length(contrib)] == 1]) ;
@@ -31,32 +45,28 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, bet
   
   # update users reputation 1) stake distribution
   users$reputation[contrib[3:length(contrib)] == vote] <- users$reputation[contrib[3:length(contrib)] == vote]*
-    (1 + s * stakeDistribution(currentEvaluatorRep, equallyVotedRep, totalRep, alpha) ) ;
-  
+  (1 + d * stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha) ) ;
+
   # stake fee for current evaluator.
-  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - currentEvaluatorRep * s * 
-    stakeFee(votedRep, totalRep, feeThreshold, feeInvWidth) ;
+  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s * 
+    stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta) ;
   
-  # update users reputation 2) voting incentive
-  votingIncentive <- 1 / (1 - s*(currentEvaluatorRep / totalRep)^beta) ;
-  users$reputation[contrib[3:length(contrib)] > -1 ] <- users$reputation[contrib[3:length(contrib)] > -1 ] * votingIncentive ;
+  # update contribs data frame
   contribs[contribInd,] <- contrib ;
   
-  rewardBase <- 0 ;
-  
   # reward contributor
+  rewardBase <- 0 ;
   if(previousScore > rewardScoreThreshold) {
     rewardBase <- currentScore - previousScore ;
   } else if (currentScore > rewardScoreThreshold){
     rewardBase <- currentScore ;
   }
-#   if (rewardBase > 0) {
-#     print("reward") ;
-#   }
+  
   tokenReward <- tokenRewardFactor * rewardBase ;
   reputationReward <- reputationRewardFactor * rewardBase ;
   users$tokens[contribInd] <- users$tokens[contribInd] + tokenReward ;
   users$reputation[contribInd] <- users$reputation[contribInd] + reputationReward ;
   
+  # return updated data frames
   return(list(users,contribs)) ;
 }

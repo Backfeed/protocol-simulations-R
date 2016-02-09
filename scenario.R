@@ -1,8 +1,9 @@
 # script for defining scenarios
 
-s <- 0.05 ; # stake fraction
-alpha <- 0.5; # burn power
-beta <- 100 ; # voting incentive
+s <- 0.01 ; # stake payment
+d <- 0.1 ; # stake distribution factor
+alpha <- 0.8; # burn power 
+beta <- 1 ; # stake fee skewness
 initialReputation <- 1 ;
 initialTokens <- 20 ;
 contributionsNum <- 1 ;
@@ -11,10 +12,6 @@ numEvaluations <- numUsers ;
 tokenRewardFactor <- 0 ;
 reputationRewardFactor <- 0 ;
 rewardScoreThreshold <- 0.3 ;
-
-# params for stake functions
-feeThreshold <- 0.5 ;
-feeInvWidth <- 5 ;
 
 # create user data frame
 userNames <- paste("P",1:numUsers,sep = "");
@@ -43,16 +40,3 @@ scenario <- data.frame(evaluators, evaluatedContribs, voteValues) ;
 # scenario <- data.frame(evaluators, evaluatedContribs, voteValues) ;
 # numEvaluations <- length(evaluators) ;
 
-
-# define a function for the stake payment
-stakeFee <- function(votedRep, totalRep, feeThreshold, feeInvWidth) {
-  v <- votedRep / totalRep ;
-  x <- 1 / (1+exp(feeInvWidth*((v/feeThreshold)-1)));
-  return(x);
-}
-
-# define a function for the stake distribution
-stakeDistribution <- function(currentEvaluatorRep, equallyVotedRep, totalRep, alpha) {
-  x <- (currentEvaluatorRep / equallyVotedRep) * (equallyVotedRep / totalRep)^alpha
-  return(x) ;
-}
