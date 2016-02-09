@@ -1,6 +1,5 @@
 # script for running simulations of the backfeed protocol
-# dddd
-a
+
 # clear workspace
 rm(list=ls());
 
