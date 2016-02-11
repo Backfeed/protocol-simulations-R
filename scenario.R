@@ -1,16 +1,16 @@
 # script for defining scenarios
 
-s <- 0.02 ; # stake payment
+s <- 0.03 ; # stake payment
 d <- 0.1 ; # stake distribution factor
-alpha <- 1; # burn power 
-beta <- 1 ; # stake fee skewness
+alpha <- 0.6; # burn power 
+beta <- 0.5 ; # stake fee skewness
 initialReputation <- 10 ;
 initialTokens <- 20 ;
-contributionsNum <- 3 ;
-numUsers <- 5 ;
-numEvaluations <- 10 ;
-tokenRewardFactor <- 5 ;
-reputationRewardFactor <- 2 ;
+contributionsNum <- 1 ;
+numUsers <- 100 ;
+numEvaluations <- 100 ;
+tokenRewardFactor <- 0 ;
+reputationRewardFactor <- 0 ;
 rewardScoreThreshold <- 0.5 ;
 bidDuration <- 1000 ; # assume contributions are in a single bid
 contributionFee <- 1 ;
@@ -41,9 +41,9 @@ for (i in 1:contributionsNum)
 }
 
 # create scenario data frame
-evaluators <- sample(1:numUsers, numEvaluations, replace = TRUE) ;#c(1:numEvaluations) ;
+evaluators <- 1:numEvaluations;#sample(1:numUsers, numEvaluations, replace = TRUE) ;#c(1:numEvaluations) ;
 evaluatedContribs <- sample(1:contributionsNum, numEvaluations, replace = TRUE) ;
-voteValues <- sample(0:1, numEvaluations, replace = TRUE);
+voteValues <-  rep(1, numEvaluations); #sample(0:1, numEvaluations, replace = TRUE);
 votingTimesUnsrt <- sample(1:bidDuration, numEvaluations, replace = FALSE) ;
 votingTimes <- sort(votingTimesUnsrt) ;
 scenario <- data.frame(evaluators, evaluatedContribs, voteValues, votingTimes) ;

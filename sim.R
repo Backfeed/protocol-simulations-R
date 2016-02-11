@@ -46,8 +46,9 @@ plot(5, 5, type="n", axes=TRUE, ann=TRUE,
      xlim=c(0, numEvaluations +1), ylim = c(ylim1,ylim2), 
      ylab = "normalized reputation", xlab = "Event index") ;
 lines(userRelativeRep[,1], type="o", col = rgb(1,0,0)) ;
-lines(userRelativeRep[,2], type="o", col = rgb(0,1,0)) ;
-lines(userRelativeRep[,3], type="o", col = rgb(0,0,1)) ;
-lines(userRelativeRep[,4], type="o", col = rgb(1,0,1)) ;
-lines(userRelativeRep[,5], type="o", col = rgb(0,1,1)) ;
+lines(userRelativeRep[,10], type="o", col = rgb(0,1,0)) ;
+lines(userRelativeRep[,25], type="o", col = rgb(0,0,1)) ;
+lines(userRelativeRep[,50], type="o", col = rgb(1,0,1)) ;
+lines(userRelativeRep[,75], type="o", col = rgb(0,1,1)) ;
+lines(userRelativeRep[,100], type="o", col = rgb(1,1,0)) ;
 

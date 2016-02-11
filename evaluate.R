@@ -29,15 +29,17 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
   results[eventIndex,(length(users$name)+2):(2*length(users$name)+1)] <- users$tokens ;
   
   contrib<-contribs[contribInd,];
-  
+  currentComment <- "" ;
   # check whether user has voted
   if (contrib[2+evaluatorInd] != -1) {
-    print("user has voted") ;
+    currentComment <- paste(currentComment, users$name[evaluatorInd], "already voted.") ;
     if (vote == contrib[2+evaluatorInd]) {
-      print("Unchanged vote") ;
+      currentComment <- paste(currentComment, "Vote unchanged.") ;
+      results$comments[eventIndex] <- currentComment ;
       return ;
     } else {
-      print("changed vote") ;
+      currentComment <- paste(currentComment, "Vote changed.") ;
+      results$comments[eventIndex] <- currentComment ;
       contrib[2+evaluatorInd] <- -1 ;
     }
   }
@@ -54,8 +56,9 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
   
   # update users reputation 1) stake distribution
   stakeDistVal <- stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha) ;
-  users$reputation[contrib[3:length(contrib)] == vote] <- users$reputation[contrib[3:length(contrib)] == vote]*
-  (1 + d * stakeDistVal ) ;
+  users$reputation[contrib[3:length(contrib)] == vote & (1:length(users$name) != evaluatorInd)] <- 
+    users$reputation[contrib[3:length(contrib)] == vote & (1:length(users$name) != evaluatorInd)] * 
+    (1 + d * stakeDistVal ) ;
 
   # stake fee for current evaluator.
   print(users$reputation[evaluatorInd]) ;
@@ -73,11 +76,14 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
     rewardBase <- currentScore ;
   }
   
-  tokenReward <- tokenRewardFactor * rewardBase ;
-  reputationReward <- reputationRewardFactor * rewardBase ;
-  users$tokens[contribInd] <- users$tokens[contribInd] + tokenReward ;
-  users$reputation[contribInd] <- users$reputation[contribInd] + reputationReward ;
-  
+  if(rewardBase > 0) {
+    tokenReward <- tokenRewardFactor * rewardBase ;
+    reputationReward <- reputationRewardFactor * rewardBase ;
+    users$tokens[contributions$contributor[contribInd]] <- users$tokens[contributions$contributor[contribInd]] + tokenReward ;
+    users$reputation[contributions$contributor[contribInd]] <- users$reputation[contributions$contributor[contribInd]] + reputationReward ;
+    currentComment <- paste(currentComment, users$name[contributions$contributor[contribInd]], "rewarded with tokens and rep.") ;
+    results$comments[eventIndex] <- currentComment ;
+  }
   results[eventIndex,2:(length(users$name)+1)] <- users$reputation ;
   results[eventIndex,(length(users$name)+2):(2*length(users$name)+1)] <- users$tokens ;
   
