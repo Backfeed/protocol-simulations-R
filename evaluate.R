@@ -8,17 +8,26 @@ stakeDistribution <- function(currentEvaluatorRep, votedRep, totalRep, equallyVo
 }
 
 # define a function for the stake payment
-stakeFee <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta) {
-  x <- currentEvaluatorRep * (  1 - ((votedRep - currentEvaluatorRep) / totalRep)^beta ) ; 
+stakeFee <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration = 1, voteTime = 0) {
+  x <-  (  1 - ((votedRep - currentEvaluatorRep) / totalRep)^beta ) ;
+  y <- (1 - voteTime/bidDuration) ;
   # votedRep inculdes currentEvaluatorRep and therfore >=0.
-  return(x);
+  return(x*y);
 }
 
-evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, beta, s, d,
-                     tokenRewardFactor, reputationRewardFactor, rewardScoreThreshold)
+evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuration, voteTime, alpha, beta, s, d,
+                     tokenRewardFactor, reputationRewardFactor, rewardScoreThreshold, results, eventIndex)
 {
   
-  print(paste(users$name[evaluatorInd], " evaluates ", contribs[contribInd,1], "by ", as.character(vote)));
+  eventDescription <- as.character(paste(users$name[evaluatorInd], " evaluates ", 
+                            contribs[contribInd,1], " by ", as.character(vote), 
+                            " at time ", as.character(voteTime))) ;
+  print(eventDescription) ;
+  # print results in the case that function returns without any update.
+  results[eventIndex,1] <- eventDescription ;
+  results[eventIndex,2:(length(users$name)+1)] <- users$reputation ;
+  results[eventIndex,(length(users$name)+2):(2*length(users$name)+1)] <- users$tokens ;
+  
   contrib<-contribs[contribInd,];
   
   # check whether user has voted
@@ -44,13 +53,15 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, bet
   currentScore <- upVotedRep/totalRep ;
   
   # update users reputation 1) stake distribution
+  stakeDistVal <- stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha) ;
   users$reputation[contrib[3:length(contrib)] == vote] <- users$reputation[contrib[3:length(contrib)] == vote]*
-  (1 + d * stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha) ) ;
+  (1 + d * stakeDistVal ) ;
 
   # stake fee for current evaluator.
-  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s * 
-    stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta) ;
-  
+  print(users$reputation[evaluatorInd]) ;
+  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s * currentEvaluatorRep *
+    stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration, voteTime) ;
+  print(users$reputation[evaluatorInd]) ;
   # update contribs data frame
   contribs[contribInd,] <- contrib ;
   
@@ -67,6 +78,9 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, bet
   users$tokens[contribInd] <- users$tokens[contribInd] + tokenReward ;
   users$reputation[contribInd] <- users$reputation[contribInd] + reputationReward ;
   
+  results[eventIndex,2:(length(users$name)+1)] <- users$reputation ;
+  results[eventIndex,(length(users$name)+2):(2*length(users$name)+1)] <- users$tokens ;
+  
   # return updated data frames
-  return(list(users,contribs)) ;
+  return(list(users,contribs, results)) ;
 }
