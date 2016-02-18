@@ -2,17 +2,18 @@
 
 
 # define a function for the stake distribution
-stakeDistribution <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha) {
-  x <- (currentEvaluatorRep / equallyVotedRep) * (equallyVotedRep / totalRep)^alpha
+stakeDistribution <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) {
+  #x <- (currentEvaluatorRep / equallyVotedRep) * (equallyVotedRep / totalRep)^alpha
+  x <- (currentEvaluatorRep/equallyVotedRep) * (1 - (equallyVotedRep/totalRep)^beta) * (equallyVotedRep / totalRep)^alpha
   return(x) ;
 }
 
 # define a function for the stake payment
 stakeFee <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration = 1, voteTime = 0) {
-  x <-  (  1 - ((votedRep - currentEvaluatorRep) / totalRep)^beta ) ;
-  y <- (1 - voteTime/bidDuration) ;
+  x <- 1 - (equallyVotedRep/totalRep)^beta ;
+  y <- 1 - voteTime/bidDuration ;
   # votedRep inculdes currentEvaluatorRep and therfore >=0.
-  return(x*y);
+  return(currentEvaluatorRep * x * y);
 }
 
 evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuration, voteTime, alpha, beta, s, d,
@@ -30,6 +31,7 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
   
   contrib<-contribs[contribInd,];
   currentComment <- "" ;
+  
   # check whether user has voted
   if (contrib[2+evaluatorInd] != -1) {
     currentComment <- paste(currentComment, users$name[evaluatorInd], "already voted.") ;
@@ -54,17 +56,20 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
   previousScore <- previousUpvote/totalRep ;
   currentScore <- upVotedRep/totalRep ;
   
-  # update users reputation 1) stake distribution
-  stakeDistVal <- stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha) ;
-  users$reputation[contrib[3:length(contrib)] == vote & (1:length(users$name) != evaluatorInd)] <- 
-    users$reputation[contrib[3:length(contrib)] == vote & (1:length(users$name) != evaluatorInd)] * 
-    (1 + d * stakeDistVal ) ;
-
-  # stake fee for current evaluator.
-  print(users$reputation[evaluatorInd]) ;
-  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s * currentEvaluatorRep *
-    stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration, voteTime) ;
-  print(users$reputation[evaluatorInd]) ;
+  # only if current vote is an upvote it triggers reputation dispersal and stake payment.
+  if(vote == 1) {
+    
+    # update users reputation 1) stake distribution
+    stakeDistVal <- stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) ;
+    users$reputation[contrib[3:length(contrib)] == vote] <- 
+      users$reputation[contrib[3:length(contrib)] == vote] * 
+      (1 + d * stakeDistVal) ;
+  
+    # stake fee for current evaluator.
+    users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s *
+      stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration, voteTime) ;
+  }
+  
   # update contribs data frame
   contribs[contribInd,] <- contrib ;
   
@@ -84,6 +89,7 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
     currentComment <- paste(currentComment, users$name[contributions$contributor[contribInd]], "rewarded with tokens and rep.") ;
     results$comments[eventIndex] <- currentComment ;
   }
+  
   results[eventIndex,2:(length(users$name)+1)] <- users$reputation ;
   results[eventIndex,(length(users$name)+2):(2*length(users$name)+1)] <- users$tokens ;
   
