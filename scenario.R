@@ -4,10 +4,10 @@ s <- 0.02 ; # stake payment
 alpha <- 0.7; # burn power
 beta <- 0.7 ; # stake fee skewness
 d <- s/(0.5)^(alpha+1) ; # stake distribution factor chosen roughly that 40% reputation voter breaks even.
-initialReputation <- 1 ;
+initialReputation <- 5 ;
 initialTokens <- 20 ;
 contributionsNum <- 1 ;
-numUsers <- 50 ;
+numUsers <- 10 ;
 numEvaluations <- numUsers ;
 tokenRewardFactor <- 0 ;
 reputationRewardFactor <- 0 ;
@@ -17,7 +17,7 @@ contributionFee <- 1 ;
 
 # create user data frame
 userNames <- paste("P",1:numUsers,sep = "");
-userReputation <-rep(initialReputation, numUsers) ;
+userReputation <- rep(initialReputation, numUsers) ; #sample(1:initialReputation,numUsers, replace = TRUE) ; 
 userTokens <- rep(initialTokens, numUsers) ;
 users <- data.frame(userNames, userReputation, userTokens) ;
 names(users)<- c("name", "reputation", "tokens");
@@ -41,9 +41,9 @@ for (i in 1:contributionsNum)
 }
 
 # create scenario data frame
-evaluators <- c(1:numEvaluations) ;#sample(1:numUsers, numEvaluations, replace = TRUE) ;
+evaluators <- c(1:numEvaluations); #sample(1:numUsers, numEvaluations, replace = TRUE) ;
 evaluatedContribs <- sample(1:contributionsNum, numEvaluations, replace = TRUE) ;
-voteValues <- rep(1, numEvaluations); #sample(0:1, numEvaluations, replace = TRUE);  #
+voteValues <- rep(1, numEvaluations); #sample(0:1, numEvaluations, replace = TRUE);  
 votingTimesUnsrt <- sample(1:bidDuration, numEvaluations, replace = FALSE) ;
 votingTimes <- sort(votingTimesUnsrt) ;
 scenario <- data.frame(evaluators, evaluatedContribs, voteValues, votingTimes) ;

@@ -4,8 +4,13 @@
 # define a function for the stake distribution
 stakeDistribution <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) {
   #x <- (currentEvaluatorRep / equallyVotedRep) * (equallyVotedRep / totalRep)^alpha
-  x <- (currentEvaluatorRep/equallyVotedRep) * (1 - (equallyVotedRep/totalRep)^beta) * (equallyVotedRep / totalRep)^alpha
+  x <- (currentEvaluatorRep/equallyVotedRep) * (1 - (equallyVotedRep/totalRep)^beta) ;
   return(x) ;
+}
+
+burnFactor <-function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta){
+  x <- (equallyVotedRep / totalRep)^alpha
+  #x <- exp(-alpha*currentEvaluatorRep/totalRep) ;
 }
 
 # define a function for the stake payment
@@ -14,6 +19,11 @@ stakeFee <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, b
   y <- 1 - voteTime/bidDuration ;
   # votedRep inculdes currentEvaluatorRep and therfore >=0.
   return(currentEvaluatorRep * x * y);
+}
+
+nonVoteLeak <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta){
+  x <- currentEvaluatorRep/totalRep ;
+  return(x) ;
 }
 
 evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuration, voteTime, alpha, beta, s, d,
@@ -61,13 +71,19 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
     
     # update users reputation 1) stake distribution
     stakeDistVal <- stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) ;
+    burnF <- burnFactor(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) ;
     users$reputation[contrib[3:length(contrib)] == vote] <- 
       users$reputation[contrib[3:length(contrib)] == vote] * 
-      (1 + d * stakeDistVal) ;
+      (1 + d * stakeDistVal * burnF) ;
   
     # stake fee for current evaluator.
     users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s *
       stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration, voteTime) ;
+    
+    users$reputation[contrib[3:length(contrib)] != vote] <- 
+      users$reputation[contrib[3:length(contrib)] != vote]*
+      (1 - s*nonVoteLeak(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta)) ;
+    
   }
   
   # update contribs data frame
@@ -86,7 +102,8 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
     reputationReward <- reputationRewardFactor * rewardBase ;
     users$tokens[contributions$contributor[contribInd]] <- users$tokens[contributions$contributor[contribInd]] + tokenReward ;
     users$reputation[contributions$contributor[contribInd]] <- users$reputation[contributions$contributor[contribInd]] + reputationReward ;
-    currentComment <- paste(currentComment, users$name[contributions$contributor[contribInd]], "rewarded with tokens and rep.") ;
+    currentComment <- paste(currentComment, users$name[contributions$contributor[contribInd]], 
+                            "rewarded with tokens and rep. for contribution ", contrib$id) ;
     results$comments[eventIndex] <- currentComment ;
   }
   
