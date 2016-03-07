@@ -37,6 +37,8 @@ write.table(results, file = "results.csv", append = FALSE, quote = FALSE, sep = 
 userRelativeRep <- results[,2:(numUsers+1)] / matrix(rep(rowSums(results[,2:(numUsers+1)]), numUsers), 
                                       length(results$events),numUsers, byrow = FALSE) ;
 
+# plot total reputation
+totalUsersReputation <- rowSums(results[,2:(numUsers+1)]) ;
 
 # define plot axes properties
 ylim1 <- min(userRelativeRep) - 0.0001;
@@ -56,6 +58,8 @@ for (i in 1:(numLines+1)) {
   print(plotIndex) ;
 }
 
+plot(as.numeric(userRelativeRep[length(userRelativeRep),]));
+plot(as.numeric(totalUsersReputation)) ;
 
 
 # lines(userRelativeRep[,1], type="o", col = rgb(1,0,0)) ;

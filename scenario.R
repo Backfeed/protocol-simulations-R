@@ -1,23 +1,23 @@
 # script for defining scenarios
 
 s <- 0.02 ; # stake payment
-alpha <- 0.7; # burn power
-beta <- 0.7 ; # stake fee skewness
-d <- s/(0.5)^(alpha+1) ; # stake distribution factor chosen roughly that 40% reputation voter breaks even.
-initialReputation <- 5 ;
-initialTokens <- 20 ;
-contributionsNum <- 1 ;
-numUsers <- 10 ;
-numEvaluations <- numUsers ;
-tokenRewardFactor <- 0 ;
-reputationRewardFactor <- 0 ;
-rewardScoreThreshold <- 0.5 ;
-bidDuration <- 1000 ; # assume contributions are in a single bid
-contributionFee <- 1 ;
+alpha <- 0.5 ; # burn power
+beta <- 0.6 ; # stake fee skewness
+d <- 0.1 ; #s/(0.5)^(alpha+1) ; # stake distribution factor chosen roughly that 40% reputation voter breaks even.
+contributionsNum <- 3 ;
+numUsers <-5 ;
+initialReputation <- 0.2 ;
+initialTokens <- 11 ;
+numEvaluations <- 1 ;
+tokenRewardFactor <- 15 ;
+reputationRewardFactor <- 5 ;
+rewardScoreThreshold <- 1.1 ;
+bidDuration <- 86400000 ; # assume contributions are in a single bid
+contributionFee <- 0 ;
 
 # create user data frame
 userNames <- paste("P",1:numUsers,sep = "");
-userReputation <- rep(initialReputation, numUsers) ; #sample(1:initialReputation,numUsers, replace = TRUE) ; 
+userReputation <- rep(initialReputation, numUsers) ; # sample(1:initialReputation,numUsers, replace = TRUE) ; 
 userTokens <- rep(initialTokens, numUsers) ;
 users <- data.frame(userNames, userReputation, userTokens) ;
 names(users)<- c("name", "reputation", "tokens");
@@ -40,13 +40,26 @@ for (i in 1:contributionsNum)
   }
 }
 
-# create scenario data frame
-evaluators <- c(1:numEvaluations); #sample(1:numUsers, numEvaluations, replace = TRUE) ;
-evaluatedContribs <- sample(1:contributionsNum, numEvaluations, replace = TRUE) ;
-voteValues <- rep(1, numEvaluations); #sample(0:1, numEvaluations, replace = TRUE);  
-votingTimesUnsrt <- sample(1:bidDuration, numEvaluations, replace = FALSE) ;
+
+# # create scenario data frame
+# evaluators <- sample(1:numUsers, numEvaluations, replace = TRUE) ; #c(1:numEvaluations);
+# evaluatedContribs <- sample(1:contributionsNum, numEvaluations, replace = TRUE) ;
+# voteValues <- sample(0:1, numEvaluations, replace = TRUE);  #rep(1, numEvaluations);
+# votingTimesUnsrt <- sample(1:bidDuration, numEvaluations, replace = FALSE) ;
+# votingTimes <- sort(votingTimesUnsrt) ;
+# scenario <- data.frame(evaluators, evaluatedContribs, voteValues, votingTimes) ;
+
+
+# #define sheet scenario as dataframe.
+evaluators <- c(1,2,1,3,4,5,4,1,2,3) ;
+evaluatedContribs <- c(1,1,2,1,1,1,2,2,2,2) ;
+voteValues <- c(1,0,1,1,1,0,1,0,0,1) ;
+numEvaluations <- length(evaluators) ;
+votingTimesUnsrt <- sample(1:100, numEvaluations, replace = FALSE) ;
 votingTimes <- sort(votingTimesUnsrt) ;
-scenario <- data.frame(evaluators, evaluatedContribs, voteValues, votingTimes) ;
+scenario <- data.frame(evaluators, evaluatedContribs, voteValues,votingTimes) ;
+numEvaluations <- length(evaluators) ;
+
 
 # create scenarion results data frame
 events <- character(length = numEvaluations + 1) ;
