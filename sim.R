@@ -13,11 +13,9 @@ for( i in 1:numEvaluations) {
   evaluatorInd <- scenario$evaluators[i] ;
   contribInd <- scenario$evaluatedContribs[i] ;
   vote <- scenario$voteValues[i] ;
-  voteTime <- scenario$votingTimes[i] ;
   eventIndex <- i+1 ;
   # perform evaluation
-  x <- evaluate(users, contributions, contribInd, evaluatorInd, vote,
-                bidDuration, voteTime, alpha, beta, s, d, 
+  x <- evaluate(users, contributions, contribInd, evaluatorInd, vote, alpha, beta, s, d, 
                 tokenRewardFactor, reputationRewardFactor, rewardScoreThreshold, 
                 results, eventIndex) ;
   
@@ -33,9 +31,9 @@ write.table(results, file = "results.csv", append = FALSE, quote = FALSE, sep = 
             col.names = TRUE) ;
 
 
-# plot relatice reputation ferom results.
+# plot relative reputation ferom results.
 userRelativeRep <- results[,2:(numUsers+1)] / matrix(rep(rowSums(results[,2:(numUsers+1)]), numUsers), 
-                                      length(results$events),numUsers, byrow = FALSE) ;
+                                                     length(results$events),numUsers, byrow = FALSE) ;
 
 # plot total reputation
 totalUsersReputation <- rowSums(results[,2:(numUsers+1)]) ;

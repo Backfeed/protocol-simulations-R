@@ -31,7 +31,7 @@ write.table(results, file = "results.csv", append = FALSE, quote = FALSE, sep = 
             col.names = TRUE) ;
 
 
-# plot relatice reputation ferom results.
+# plot relative reputation ferom results.
 userRelativeRep <- results[,2:(numUsers+1)] / matrix(rep(rowSums(results[,2:(numUsers+1)]), numUsers), 
                                       length(results$events),numUsers, byrow = FALSE) ;
 
