@@ -13,11 +13,9 @@ for( i in 1:numEvaluations) {
   evaluatorInd <- scenario$evaluators[i] ;
   contribInd <- scenario$evaluatedContribs[i] ;
   vote <- scenario$voteValues[i] ;
-  voteTime <- scenario$votingTimes[i] ;
   eventIndex <- i+1 ;
   # perform evaluation
-  x <- evaluate(users, contributions, contribInd, evaluatorInd, vote,
-                bidDuration, voteTime, alpha, beta, s, d, 
+  x <- evaluate(users, contributions, contribInd, evaluatorInd, vote, alpha, beta, s, d, 
                 tokenRewardFactor, reputationRewardFactor, rewardScoreThreshold, 
                 results, eventIndex) ;
   

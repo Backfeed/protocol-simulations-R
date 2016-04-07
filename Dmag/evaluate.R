@@ -17,7 +17,7 @@ burnFactor <-function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, 
 
 # define a function for the stake payment
 stakeFee <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration = 1, voteTime = 0) {
-  x <- 1 - (equallyVotedRep/totalRep)^beta ;
+  x <- 1 - (votedRep/totalRep)^beta ;
   y <- 1 - voteTime/bidDuration ;
   #y <-1 ;
   # votedRep inculdes currentEvaluatorRep and therfore >=0.
@@ -25,18 +25,12 @@ stakeFee <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, b
   return(currentEvaluatorRep * x * y);
 }
 
-nonVoteLeak <- function(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta){
-  x <- currentEvaluatorRep/totalRep ;
-  return(x) ;
-}
-
-evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuration, voteTime, alpha, beta, s, d,
+evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, alpha, beta, s, d,
                      tokenRewardFactor, reputationRewardFactor, rewardScoreThreshold, results, eventIndex)
 {
   
   eventDescription <- as.character(paste(users$name[evaluatorInd], " evaluates ", 
-                            contribs[contribInd,1], " by ", as.character(vote), 
-                            " at time ", as.character(voteTime))) ;
+                            contribs[contribInd,1], " by ", as.character(vote))) ;
   print(eventDescription) ;
   
   # print results in the case that function returns without any update.
@@ -49,31 +43,31 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
   
   
   # check whether user has voted
-  if (contrib[2+evaluatorInd] != -1) {
+  if (contrib[3+evaluatorInd] != -1) {
     currentComment <- paste(currentComment, users$name[evaluatorInd], "already voted.") ;
-    if (vote == contrib[2+evaluatorInd]) {
+    if (vote == contrib[3+evaluatorInd]) {
       currentComment <- paste(currentComment, "Vote unchanged.") ;
       results$comments[eventIndex] <- currentComment ;
       return ;
     } else {
       currentComment <- paste(currentComment, "Vote changed.") ;
       results$comments[eventIndex] <- currentComment ;
-      contrib[2+evaluatorInd] <- -1 ;
+      contrib[3+evaluatorInd] <- -1 ;
     }
   }
   
-  previousUpvoteRep <- sum(users$reputation[contrib[3:length(contrib)] == 1]) ;
+  previousUpvoteRep <- sum(users$reputation[contrib[4:length(contrib)] == 1]) ;
   currentEvaluatorRep <- users$reputation[evaluatorInd] ;
-  previousVotersLogical <- contrib[3:length(contrib)] != -1 ;
+  previousVotersLogical <- contrib[4:length(contrib)] != -1 ;
   currentVotersLogical <- previousVotersLogical | (1:length(users$reputation) == evaluatorInd) ;
-  previousEqualVotersLogical <- contrib[3:length(contrib)] == vote ;
-  previousUpVotersLogical <- contrib[3:length(contrib)] == 1 ;
+  previousEqualVotersLogical <- contrib[4:length(contrib)] == vote ;
+  previousUpVotersLogical <- contrib[4:length(contrib)] == 1 ;
   
   # evaluator makes the vote.
-  contrib[2+evaluatorInd] <- vote ;
+  contrib[3+evaluatorInd] <- vote ;
   
   equalVotersLogical <- previousEqualVotersLogical | (1:length(users$reputation) == evaluatorInd) ;
-  currentUpVotersLogical <- contrib[3:length(contrib)] == 1 ;
+  currentUpVotersLogical <- contrib[4:length(contrib)] == 1 ;
   previousVotedRep <-sum(users$reputation[previousVotersLogical]) ;
   votedRep <- sum(users$reputation[currentVotersLogical]) ; #includes current evaluator
   totalRep <- sum(users$reputation) ;
@@ -83,35 +77,37 @@ evaluate <- function(users, contribs, contribInd, evaluatorInd, vote, bidDuratio
   currentScore <- upVotedRep/totalRep ;
   
   # only if current vote is an upvote it triggers reputation dispersal and stake payment.
-  if(vote == 1) {
     
-    # update users reputation 1) stake distribution
-    stakeDistVal <- stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) ;
-    burnF <- burnFactor(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) ;
-    
-    # update previous voters
-    users$reputation[previousEqualVotersLogical] <- users$reputation[previousEqualVotersLogical] * 
-      (1 + d * stakeDistVal * burnF) ;
+  # update users reputation 1) stake distribution
+  stakeDistVal <- stakeDistribution(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) ;
+  burnF <- burnFactor(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, alpha, beta) ;
   
-    # stake fee for current evaluator.
-    fee <- stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta, bidDuration, voteTime) ;
-    users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s * fee ;
-    print(fee) ;
-    
+  # update previous voters
+  users$reputation[previousEqualVotersLogical] <- users$reputation[previousEqualVotersLogical] * 
+    (1 + d * stakeDistVal * burnF) ;
+
+  # stake fee for current evaluator.
+  
+  fee <- stakeFee(currentEvaluatorRep, votedRep, totalRep, equallyVotedRep, beta) ;
+  users$reputation[evaluatorInd] <- users$reputation[evaluatorInd] - s * fee ;
+  
+  # reward contributor
+  rewardBase <- 0 ;
+  maxScore <- contrib$maxScore ;
+  if(currentScore > maxScore){
+    if(maxScore > rewardScoreThreshold) {
+      rewardBase <- currentScore - maxScore ;
+    } else if (currentScore > rewardScoreThreshold){
+      rewardBase <- currentScore ;
+    }
+    contrib$maxScore <- currentScore ;
   }
   
   # update contribs data frame
   contribs[contribInd,] <- contrib ;
   
-  # reward contributor
-  rewardBase <- 0 ;
-  if(previousScore > rewardScoreThreshold) {
-    rewardBase <- currentScore - previousScore ;
-  } else if (currentScore > rewardScoreThreshold){
-    rewardBase <- currentScore ;
-  }
-  
   if(rewardBase > 0) {
+    print(rewardBase);
     tokenReward <- tokenRewardFactor * rewardBase ;
     reputationReward <- reputationRewardFactor * rewardBase ;
     users$tokens[contributions$contributor[contribInd]] <- users$tokens[contributions$contributor[contribInd]] + tokenReward ;
